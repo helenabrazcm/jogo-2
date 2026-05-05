@@ -1,1 +1,23 @@
-
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Minha Fazenda RPG 2D</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <div id="hud">
+            <span>Dinheiro: $<span id="gold">100</span></span>
+            <span>Sementes: <span id="seeds">5</span></span>
+            <span>Dia: <span id="day">1</span></span>
+        </div>
+        <canvas id="gameCanvas"></canvas>
+        <div id="dialogue-box" class="hidden">
+            <p id="npc-text"></p>
+            <button onclick="closeDialogue()">Fechar</button>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,1 +1,112 @@
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
 
+// Configurações
+canvas.width = 800;
+canvas.height = 600;
+const TILE_SIZE = 40;
+
+// Estado do Jogador
+let player = { x: 400, y: 300, gold: 100, seeds: 5, inventory: [] };
+let crops = []; // {x, y, age, type}
+let npcs = [{ x: 100, y: 100, name: "Fazendeiro Bob", msg: "Ei! Plante sementes no solo marrom." }];
+
+// Gerador de Mapa Simples (Biomas: Grama, Deserto, Floresta)
+const map = [];
+for (let i = 0; i < canvas.width / TILE_SIZE; i++) {
+    map[i] = [];
+    for (let j = 0; j < canvas.height / TILE_SIZE; j++) {
+        let type = 'grass';
+        if (i < 5) type = 'forest'; // Bioma Floresta
+        if (i > 15) type = 'desert'; // Bioma Deserto
+        if (i > 8 && i < 12 && j > 5 && j < 10) type = 'dirt'; // Solo Arável
+        map[i][j] = type;
+    }
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 1. Desenhar Mapa
+    for (let i = 0; i < map.length; i++) {
+        for (let j = 0; j < map[i].length; j++) {
+            if (map[i][j] === 'grass') ctx.fillStyle = '#7cfc00';
+            else if (map[i][j] === 'forest') ctx.fillStyle = '#228b22';
+            else if (map[i][j] === 'desert') ctx.fillStyle = '#f4a460';
+            else ctx.fillStyle = '#8b4513'; // Solo
+            ctx.fillRect(i * TILE_SIZE, j * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+        }
+    }
+
+    // 2. Desenhar Plantações
+    crops.forEach(crop => {
+        ctx.fillStyle = crop.age >= 100 ? 'red' : 'lightgreen';
+        ctx.beginPath();
+        ctx.arc(crop.x + 20, crop.y + 20, 10, 0, Math.PI * 2);
+        ctx.fill();
+        if (crop.age < 100) crop.age += 0.1; // Crescimento
+    });
+
+    // 3. Desenhar NPCs
+    ctx.fillStyle = "blue";
+    npcs.forEach(n => ctx.fillRect(n.x, n.y, 30, 30));
+
+    // 4. Desenhar Jogador
+    ctx.fillStyle = "white";
+    ctx.fillRect(player.x, player.y, 30, 30);
+}
+
+// Interação
+window.addEventListener('keydown', e => {
+    const step = 10;
+    if (e.key === 'ArrowUp') player.y -= step;
+    if (e.key === 'ArrowDown') player.y += step;
+    if (e.key === 'ArrowLeft') player.x -= step;
+    if (e.key === 'ArrowRight') player.x += step;
+
+    // Ação: Plantar (Tecla P)
+    if (e.key === 'p' || e.key === 'P') {
+        let gridX = Math.floor(player.x / TILE_SIZE);
+        let gridY = Math.floor(player.y / TILE_SIZE);
+        
+        if (map[gridX][gridY] === 'dirt' && player.seeds > 0) {
+            crops.push({ x: gridX * TILE_SIZE, y: gridY * TILE_SIZE, age: 0 });
+            player.seeds--;
+            updateHUD();
+        }
+    }
+
+    // Ação: Colher/Vender (Tecla V)
+    if (e.key === 'v' || e.key === 'V') {
+        crops = crops.filter(crop => {
+            if (crop.age >= 100 && Math.abs(player.x - crop.x) < 30 && Math.abs(player.y - crop.y) < 30) {
+                player.gold += 20;
+                player.seeds += 1;
+                updateHUD();
+                return false;
+            }
+            return true;
+        });
+    }
+
+    // Checar NPC (Tecla E)
+    if (e.key === 'e' || e.key === 'E') {
+        npcs.forEach(n => {
+            if (Math.abs(player.x - n.x) < 40 && Math.abs(player.y - n.y) < 40) {
+                document.getElementById('npc-text').innerText = n.msg;
+                document.getElementById('dialogue-box').classList.remove('hidden');
+            }
+        });
+    }
+});
+
+function updateHUD() {
+    document.getElementById('gold').innerText = player.gold;
+    document.getElementById('seeds').innerText = player.seeds;
+}
+
+function closeDialogue() {
+    document.getElementById('dialogue-box').classList.add('hidden');
+}
+
+setInterval(draw, 1000 / 60);
